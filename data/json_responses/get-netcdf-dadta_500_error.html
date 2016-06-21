@@ -1,0 +1,329 @@
+
+<!DOCTYPE html>
+
+
+
+<!--[if IE 7]> <html lang="en" class="ie ie7"> <![endif]-->
+<!--[if IE 8]> <html lang="en"  class="ie ie8"> <![endif]-->
+<!--[if IE 9]> <html lang="en"  class="ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html lang="en" > <!--<![endif]-->
+
+
+  
+  <head >
+
+    
+
+    
+      <meta charset="utf-8" />
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <meta name="generator" content="Django" />
+    
+
+    
+
+    <title>
+      
+         HydroShare Apps
+      
+      
+    </title>
+
+    
+
+    
+      <link rel="shortcut icon" href="/static/tethys_portal/images/hs-icon-sm.png" />
+    
+
+    
+
+    
+  
+      <link href="/static/tethys_portal/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+      <link href="/static/tethys_portal/vendor/font-awesome/css/font-awesome.min.css" rel="stylesheet" />
+      <link href="/static/tethys_portal/vendor/bootstrap-social/bootstrap-social.css" rel="stylesheet" />
+      <link href="/static/tethys_portal/css/tethys_main.css"  rel="stylesheet" />
+    
+  <link href="/static/tethys_portal/css/error.css" type="text/css" rel="stylesheet" />
+  <style>
+    body {
+      background: #ffffff;
+    }
+  </style>
+
+
+    
+      <script src="/static/tethys_portal/vendor/jquery/jquery.min.js" type="text/javascript"></script>
+      <script src="/static/tethys_portal/vendor/bootstrap/js/bootstrap.min.js" type="text/javascript"></script>
+    
+
+    
+    
+  </head>
+
+  
+  <body >
+
+    
+
+    
+
+  
+
+  
+    
+
+<style>
+  .user-dropdown .user-profile-nav-item a.lit {
+    background-color: #1b95dc;
+  }
+
+  .user-dropdown .user-profile-nav-item a:hover {
+    background-color: #1b95dc;
+  }
+
+  .user-dropdown .user-dropdown-menu li a:hover {
+    background-color: #1b95dc;
+  }
+
+  .site-header .header-nav li.header-action a:hover {
+    background-color: #1b95dc;
+  }
+
+  .site-header .header-nav li.header-action.lit a {
+    background-color: #1b95dc;
+  }
+
+  .mobile-nav-button:hover {
+    background-color: #1b95dc;
+  }
+
+  .site-header .header-nav li.header-action a {
+    color: #ffffff;
+  }
+
+  .site-header .header-nav li.header-action a:hover {
+    color: #dddddd;
+  }
+
+  .site-header .header-logo .logo-title a {
+    color: #ffffff;
+  }
+
+  .site-header .header-logo .logo-title a:hover {
+    color: #dddddd;
+  }
+
+  .site-header .header-nav li a {
+    color: #dddddd;
+  }
+
+  .site-header .header-nav li a:hover {
+    color: #ffffff;
+  }
+
+  .site-header .header-logo .logo-image img {
+    height: 60px;
+    
+    
+  }
+
+  @media (max-width: 750px) {
+    .site-header .header-logo .logo-image img {
+      height: 40px;
+      
+    }
+  }
+
+  @media (max-width: 900px) {
+    .site-header .header-logo .logo-image img {
+      height: 40px;
+      
+    }
+  }
+
+  @media (max-width: 1080px) {
+    .site-header .header-logo .logo-image img {
+      height: 40px;
+      
+    }
+  }
+
+  .user-dropdown .user-dropdown-menu li a {
+    color: #666666;
+  }
+</style>
+
+
+
+  <div class="mobile-nav mobile-nav-links">
+    <ul>
+      
+        <li><a href="/apps/" title="Apps">Apps</a></li>
+        
+        
+          <li>
+            <a href="/user/tim_whiteaker/" title="User Profile">
+              <span>Profile</span>
+            </a>
+          </li>
+          
+
+          <li>
+            <a href="/accounts/logout/" title="Log Out">
+              <span>Log Out</span>
+            </a>
+          </li>
+        
+      
+    </ul>
+  </div>
+
+
+<div class="header-wrapper" style="background-color: #0a62a9;">
+  <header class="site-header">
+    <div class="header-logo">
+      
+        <a class="logo-image" href="/"><img  src="/static/tethys_portal/images/hs-logo-lg-new.png"></a>
+      
+
+      
+        <h1 class="logo-title">
+          <a href="/">HydroShare Apps Portal</a>
+        </h1>
+      
+
+      
+    </div>
+
+    
+    <ul class="header-nav">
+      
+        
+          <li><a href="/apps/" title="Apps">Apps</a></li>
+          
+        
+      
+
+      
+
+        <li class="user-dropdown">
+          <div class="user-profile-nav-item">
+            <a id="user-profile" class="user-profile" href="/user/tim_whiteaker/" class="image" title="User Profile"><span>tim_whiteaker  <img class="gravatar" src="https://secure.gravatar.com/avatar/021eaef2a4628578a3603cb7cc68dc38.jpg?s=25&amp;r=g&amp;d=retro" width="25" height="25" alt="" /></span></a>
+            <a id="user-dropdown-toggle" class="user-dropdown-toggle" title="User Menu" href="javascript:void(0);" onclick="toggle_menu('#user-profile', this, '#user-dropdown-menu');"><span class="glyphicon glyphicon-chevron-down"></span></a>
+          </div>
+          <ul id="user-dropdown-menu" class="user-dropdown-menu">
+            <li>
+              <a href="/user/tim_whiteaker/settings/" title="User Settings">
+                <span class="glyphicon glyphicon-user"></span><span>    User Settings</span>
+              </a>
+            </li>
+
+            
+
+            <li class="separator"></li>
+            <li>
+              <a href="/accounts/logout/" title="Log Out">
+                <span class="glyphicon glyphicon-log-out"></span><span>   Log Out</span>
+              </a>
+            </li>
+          </ul> 
+        </li> 
+
+      
+
+    </ul>
+    
+
+    
+      <a class="mobile-nav-button mobile-links">
+          <div></div>
+          <div></div>
+          <div></div>
+      </a>
+    
+  </header>
+</div>
+  
+
+  
+  
+    <div id="site-wrapper" class="wrapper">
+      
+        
+      
+      
+      
+        
+          <div id="content">
+            
+  <div class="error-container">
+    <div class="row">
+      <div class="col-lg-6">
+        <div class="error-image-container center-parent">
+          
+            <img class="centered" src="/static/tethys_portal/images/error_500.png">
+          
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="row">
+          <div class="col-lg-12">
+            <div class="error-code-container">
+              <h1>500</h1>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-lg-12">
+            <div class="error-message-container">
+              <h2>Internal Server Error</h2>
+              <p>We&#39;re sorry, but we seem to have a problem. Please, come back later and try again.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+          </div>
+        
+      
+    </div>
+  
+
+  
+
+  
+    
+<style>
+  .copyright {
+    color: #ffffff;
+  }
+  footer.site-footer .tethys-attribution {
+    color: #ffffff;
+  }
+</style>
+<footer id="site-footer" class="site-footer" style="background-color: #0a62a9;">
+  
+
+    <div class="copyright-wrapper">
+      <span class="copyright">Copyright © 2016 HydroShare &amp; CI-Water</span>
+    </div>
+    <div class="tethys-attribution">
+      <span class="powered-by-tethys">Powered by <a href="http://www.tethysplatform.org"><img src="/static/tethys_portal/images/tethys-logo-25.png"> Tethys Platform</a></span>
+    </div>
+  
+</footer>
+  
+
+
+
+    
+
+    
+      <script src="/static/tethys_portal/js/tethys_main.js" type="text/javascript"></script>
+    
+  </body>
+</html>
