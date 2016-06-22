@@ -211,7 +211,8 @@ def get_streamflow(product, comid, sim_datetime_utc=None, timezone=None):
             input arguments.
 
     Example:
-        >>> series = get_streamflow('short_range', 5671187, None, 'US/Central')
+        >>> series = nwm.get_streamflow(
+                'short_range', 5671187, None, 'US/Central')
         >>> for s in series:
                 dates = s['dates']
                 for i, v in enumerate(s['values']):
@@ -286,7 +287,7 @@ def read_q_for_comids(nc_filename, comids):
     Example:
         >>> filename = 'example_file.nc'
         >>> comids = [5671187, 5670795]
-        >>> result = read_q_for_comids(filename, comids)
+        >>> result = nwm.read_q_for_comids(filename, comids)
         >>> print result['flows'][5671187]
         3.16675
     """
