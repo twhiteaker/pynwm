@@ -44,7 +44,7 @@ You ask for data for a given river using its COMID. To find COMIDs for rivers in
 
 The model files themselves include streamflow for all rivers at a single time step, e.g., 16:00 on June 1, 2016, with each file typically being a few dozen megabytes in size. All timestamps are in [UTC time](https://en.wikipedia.org/wiki/Coordinated_Universal_Time).
 
-## Download Streamflow
+## Download Streamflow Time Series for a River Feature
 
 You can download a time series of streamflow values for a single COMID from HydroShare.  Simply provide a COMID and a model product to get all available historical results (analysis and assimilation product) or the most recent forecast (all forecast products).
 
