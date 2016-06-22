@@ -54,6 +54,18 @@ def get_latest_analysis_filename():
 
 
 def get_latest_analysis_file(output_folder):
+    """Downloads latest analysis and assimilation file.
+
+    Downloads latest analysis and assimilation file to the output folder and
+    unzips it.
+
+    Args:
+        output_folder: Path to the folder where the file will be saved.
+
+    Returns:
+        Filename, including directory, of the downloaded file.
+    """
+
     filename = get_latest_analysis_filename()
     uri = ('https://apps.hydroshare.org/apps/nwm-data-explorer/api/'
            'GetFile?file={0}').format(filename)
