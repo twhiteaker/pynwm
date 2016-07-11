@@ -92,39 +92,62 @@ def get_analysis_bounding_dates():
 
 
 def get_latest_forecast_date(product):
-    valid_products = ['short_range', 'medium_range', 'long_range']
+    """Returns latest forecast date for the given forecast product.
+
+    HydroShare stores a rolling archive of forecasts due to size limitations,
+    so the start date of available forecasts changes over time.  As forecasts
+    arrive at HydroShare from NOAA, a folder for the forecast date is created
+    although the forecast results may not have all arrived from NOAA.
+    HydroShare cannot handle some queries when the forecast has not completely
+    arrived yet. Therefore, we require that the last expected time step for the
+    product is available in the folder before considering that forecast
+    complete.
+
+    Args:
+        product: String indicating model product. Valid values are:
+            short_range, medium_range, long_range
+
+    Returns:
+        Datetime object of latest forecast date, or None if no complete
+        forecast is found.
+    """
+
+    valid_products = {'short_range': {'suffix_pattern': '',
+                                      'max_time_step': '015'},
+                      'medium_range': {'suffix_pattern': '',
+                                       'max_time_step': '240'},
+                      'long_range': {'suffix_pattern': '_[1-4]',
+                                     'max_time_step': '720'}}
     if product not in valid_products:
         m = ('Product for getting latest forecast date must be one of the '
              'following: {0}'.format(', '.join(valid_products)))
         raise ValueError(m)
+    suffix_pattern = valid_products[product]['suffix_pattern']
+    max_time_step = valid_products[product]['max_time_step']
 
-    # Get the latest date for which forecasts are available
+    # Get possible dates for which forecasts are available
     uri_template = ('https://apps.hydroshare.org/apps/nwm-data-explorer/'
                     'files_explorer/get-folder-contents/?selection_path=%2F'
                     'projects%2Fwater%2Fnwm%2Fdata%2F{0}%3Ffolder&query_type='
                     'filesystem')
     uri = uri_template.format(product)
     response = urllib.urlopen(uri).read()
-    dates = re.findall(r'\>([0-9]+)\<', response)
+    possible_dates = re.findall(r'\>([0-9]+)\<', response)
 
-    # Get the latest time within filenames in the folder for the latest date
-    latest = None
-    if product == 'long_range':
-        pattern = (r'\>(nwm.t[0-9]+z.long_range.channel_rt_[1-4].f720.conus.'
-                   'nc_georeferenced.nc)\<')
-        for date in reversed(dates):
-            uri = uri_template.format(product + '%2F' + date)
-            response = urllib.urlopen(uri).read()
-            matches = re.findall(pattern, response)
-            if len(matches) == 16:  # 16 members in completed ensemble
-                return date_parser.parse(date)
-        raise Exception('Complete ensemble forecast not available')
-    else:
-        uri = uri_template.format(product + '%2F' + dates[-1])
+    # If last time step is available, consider the forecast complete
+    pattern_template = (r'\>(nwm.t[0-9]+z.{product}.channel_rt{suffix}.'
+                        'f{max_time_step}.conus.nc_georeferenced.nc)\<')
+    pattern = pattern_template.format(
+        product=product, suffix=suffix_pattern, max_time_step=max_time_step)
+
+    for folder_date in reversed(possible_dates):
+        uri = uri_template.format(product + '%2F' + folder_date)
         response = urllib.urlopen(uri).read()
-        times = re.findall(r'(t[0-9]+)z', response)
-        latest = date_parser.parse(dates[-1] + times[-1])
-    return latest
+        matches = re.findall(pattern, response)
+        if product == 'long_range' and len(matches) == 16:
+            return date_parser.parse(folder_date)
+        elif product != 'long_range' and len(matches):
+            return date_parser.parse(folder_date + 't' + matches[-1][5:7])
 
 
 def _get_netcdf_data_response_to_json(uri, response):
@@ -229,7 +252,7 @@ def get_streamflow(product, comid, sim_datetime_utc=None, timezone=None):
                 dates = s['dates']
                 for i, v in enumerate(s['values']):
                     print dates[i].strftime('%y-%m-%d %H'), '\t', v
-        16-06-21 07 	108.3435
+        16-06-21 07     108.3435
         16-06-21 08 	108.1367
         16-06-21 09 	107.931
         16-06-21 10 	107.7264
@@ -257,7 +280,7 @@ def get_streamflow(product, comid, sim_datetime_utc=None, timezone=None):
     end_date = (datetime.now() + timedelta(days=2)).strftime('%Y-%m-%d')
 
     uri_template = (
-        'https://apps.hydroshare.org/apps/nwm-forecasts/get-netcdf-data/?'
+        'https://apps.hydroshare.org/apps/nwm-forecasts/get-netcdf-data?'
         'config={0}&geom=channel_rt&variable=streamflow&comid={1}&'
         'startDate={2}&time={3}&lag=00z%2C06z%2C12z%2C18z&endDate={4}')
     uri = uri_template.format(product, comid, start_date, start_time, end_date)
