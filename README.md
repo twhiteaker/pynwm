@@ -44,7 +44,7 @@ You ask for data for a given river using its COMID. To find COMIDs for rivers in
 
 The model files themselves include streamflow for all rivers at a single time step, e.g., 16:00 on June 1, 2016, with each file typically being a few dozen megabytes in size. All timestamps are in [UTC time](https://en.wikipedia.org/wiki/Coordinated_Universal_Time).
 
-## Download Streamflow
+## Download Streamflow Time Series for a River Feature
 
 You can download a time series of streamflow values for a single COMID from HydroShare.  Simply provide a COMID and a model product to get all available historical results (analysis and assimilation product) or the most recent forecast (all forecast products).
 
@@ -87,3 +87,7 @@ If you want to save a subset of the data for your rivers for later use, supply a
 comids = [5671187, 5670795]
 nwm.subset_channel_file(original_model_file, subsetted_model_file, comids)
 ```
+
+# What About the Rest of the Data?
+
+In addition to streamflow forecasts, the National Water Model also produces files describing inputs into the streamflow calculation such as soil moisture and precipitation. I only targeted streamflow in pynwm since that fits my own needs. The scripts could be modified to include variable names (e.g., `precipitation`), and the  HydroShare API already supports this. If you have a need for something more than streamflow, I welcome you to fork and contribute!
