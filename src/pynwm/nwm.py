@@ -312,19 +312,19 @@ def read_q_for_comids(nc_filename, comids):
             rivers whose streamflow value is to be returned.
 
     Returns:
-        A dictionary with a 'flows' dictionary representing streamflow values
-        in cubic meters per second indexed by COMID, along with 'datetime'
+        A dictionary with a 'flows' array of streamflow values in cubic meters
+        per second in the same order as the input COMIDs, along with 'datetime'
         providing the date associated with the streamflow values. For example:
 
-        {'flows': {5671187: 10.3, 5670795: 283.2},
+        {'flows': [10.3, 283.2, 3.6],
          'datetime': datetime.datetime(2016, 6, 21, 15, 0, tzinfo=<UTC>)}
 
     Example:
         >>> filename = 'example_file.nc'
         >>> comids = [5671187, 5670795]
         >>> result = nwm.read_q_for_comids(filename, comids)
-        >>> print result['flows'][5671187]
-        3.16675
+        >>> print('COMID {0}: {1} cms'.format(comids[0], result['flows'][0]))
+        COMID 5671187: 3.16675 cms
     """
 
     result = {}
@@ -340,9 +340,7 @@ def read_q_for_comids(nc_filename, comids):
         nc_q = nc.variables['streamflow']
         sort_idx = nc_comids.argsort()
         indices = sort_idx[np.searchsorted(nc_comids[sort_idx], comids)]
-        for index in indices:
-            qs[nc_comids[index]] = nc_q[index]
-        result['flows'] = qs
+        result['flows'] = nc_q[indices]
     return result
 
 
