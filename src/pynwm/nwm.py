@@ -180,7 +180,7 @@ def _unpack_series(json_data, product):
         time_step_hrs = 3
         offset_hrs = 3
     elif product == 'long_range':
-        time_step_hrs = 61
+        time_step_hrs = 6
         offset_hrs = 6
 
     data_list = json_data.itervalues().next()
@@ -196,7 +196,7 @@ def _unpack_series(json_data, product):
         start_date = model_init_time + timedelta(hours=offset_hrs)
         value_count = len(sim_result[1])
         series_count = len(sim_result) - 2
-        dates = [start_date + timedelta(hours=i) for i in range(value_count)]
+        dates = [start_date + timedelta(hours=i*time_step_hrs) for i in range(value_count)]
 
         label = sim_result[-1]
 
