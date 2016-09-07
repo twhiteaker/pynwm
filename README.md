@@ -28,7 +28,7 @@ for s in series:
 
 # Installation and Usage
 
-pynwm requires the following packages:
+pynwm requires Python 2.7 and the following packages:
 
 * netcdf4-python
 * python-dateutil
