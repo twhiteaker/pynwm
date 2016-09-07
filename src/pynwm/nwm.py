@@ -196,7 +196,8 @@ def _unpack_series(json_data, product):
         start_date = model_init_time + timedelta(hours=offset_hrs)
         value_count = len(sim_result[1])
         series_count = len(sim_result) - 2
-        dates = [start_date + timedelta(hours=i*time_step_hrs) for i in range(value_count)]
+        dates = [start_date + timedelta(hours=i*time_step_hrs)
+                 for i in range(value_count)]
 
         label = sim_result[-1]
 
@@ -344,7 +345,8 @@ def read_q_for_comids(nc_filename, comids):
     return result
 
 
-def subset_channel_file(in_nc_filename, out_nc_filename, comids):
+def subset_channel_file(in_nc_filename, out_nc_filename, comids,
+                        just_flow_and_time=False):
     """Extracts a subset of data from an input channel file to a new file.
 
     A National Water Model channel file contains data related to river
@@ -359,13 +361,22 @@ def subset_channel_file(in_nc_filename, out_nc_filename, comids):
         out_nc_filename: Filename for the resulting subsetted file.
         comids: List or numpy array of integers representing COMIDs for the
             rivers to be included in the subsetted file.
+        just_flow_and_time: (Optional) True if only streamflow and time
+            variables should be included in the output. False if all variables
+            should be included.
     """
 
     if type(comids) != 'numpy.ndarray':
         comids = np.array(comids)
 
     with Dataset(in_nc_filename, 'r') as in_nc:
-        index = np.in1d(in_nc.variables['station_id'][:], comids)
+        if just_flow_and_time:
+            vars_to_include = ['streamflow', 'time']
+        else:
+            vars_to_include = in_nc.variables.keys()
+        nc_comids = in_nc.variables['station_id'][:]
+        orig_indices = nc_comids.argsort()
+        index = orig_indices[np.searchsorted(nc_comids[orig_indices], comids)]
         with Dataset(out_nc_filename, 'w', format=in_nc.data_model) as out_nc:
             out_nc.setncatts({k: in_nc.getncattr(k) for k in in_nc.ncattrs()})
 
@@ -377,10 +388,12 @@ def subset_channel_file(in_nc_filename, out_nc_filename, comids):
                     out_nc.createDimension(name, length)
 
             for name, var in in_nc.variables.iteritems():
-                out_var = out_nc.createVariable(
-                    name, var.datatype, var.dimensions)
-                out_var.setncatts({k: var.getncattr(k) for k in var.ncattrs()})
-                if name == 'time':
-                    out_var[:] = var[:]
-                else:
-                    out_var[:] = var[index]
+                if name in vars_to_include:
+                    out_var = out_nc.createVariable(
+                        name, var.datatype, var.dimensions)
+                    attributes = {k: var.getncattr(k) for k in var.ncattrs()}
+                    out_var.setncatts(attributes)
+                    if name == 'time':
+                        out_var[:] = var[:]
+                    else:
+                        out_var[:] = var[index]
