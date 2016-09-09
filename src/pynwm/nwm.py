@@ -372,8 +372,10 @@ def subset_channel_file(in_nc_filename, out_nc_filename, comids,
     with Dataset(in_nc_filename, 'r') as in_nc:
         if just_flow_and_time:
             vars_to_include = ['streamflow', 'time']
+            attrs_to_exclude = ['coordinates']
         else:
             vars_to_include = in_nc.variables.keys()
+            attrs_to_exclude = []
         nc_comids = in_nc.variables['station_id'][:]
         orig_indices = nc_comids.argsort()
         index = orig_indices[np.searchsorted(nc_comids[orig_indices], comids)]
@@ -391,7 +393,8 @@ def subset_channel_file(in_nc_filename, out_nc_filename, comids,
                 if name in vars_to_include:
                     out_var = out_nc.createVariable(
                         name, var.datatype, var.dimensions)
-                    attributes = {k: var.getncattr(k) for k in var.ncattrs()}
+                    attributes = {k: var.getncattr(k) for k in var.ncattrs()
+                                  if k not in attrs_to_exclude}
                     out_var.setncatts(attributes)
                     if name == 'time':
                         out_var[:] = var[:]
