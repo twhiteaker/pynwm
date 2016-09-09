@@ -300,6 +300,16 @@ def get_streamflow(product, comid, sim_datetime_utc=None, timezone=None):
     return series_list
 
 
+def _get_comid_indices(find_comids, nc_comids):
+    if type(find_comids) != 'numpy.ndarray':
+        find_comids = np.array(find_comids)
+    sorted_index = nc_comids.argsort()
+    sorted_nc_comids = nc_comids[sorted_index]
+    found_index_sorted = np.searchsorted(sorted_nc_comids, find_comids)
+    index = sorted_index[found_index_sorted]
+    return index
+
+
 def read_q_for_comids(nc_filename, comids):
     """Reads streamflow for a set of COMID identifiers in a given file.
 
@@ -330,6 +340,9 @@ def read_q_for_comids(nc_filename, comids):
 
     result = {}
     qs = {}
+    if len(comids) and type(comids[0]) is str:
+        comids = [int(comid) for comid in comids]
+
     if type(comids) != 'numpy.ndarray':
         comids = np.array(comids)
 
@@ -339,12 +352,11 @@ def read_q_for_comids(nc_filename, comids):
         result['datetime'] = date
         nc_comids = nc.variables['station_id'][:]
         nc_q = nc.variables['streamflow']
-        sort_idx = nc_comids.argsort()
-        indices = sort_idx[np.searchsorted(nc_comids[sort_idx], comids)]
+        indices = _get_comid_indices(comids, nc_comids)
         result['flows'] = nc_q[indices]
     return result
-
-
+    
+    
 def subset_channel_file(in_nc_filename, out_nc_filename, comids,
                         just_flow_and_time=False):
     """Extracts a subset of data from an input channel file to a new file.
@@ -366,6 +378,9 @@ def subset_channel_file(in_nc_filename, out_nc_filename, comids,
             should be included.
     """
 
+    if len(comids) and type(comids[0]) is str:
+        comids = [int(comid) for comid in comids]
+        
     if type(comids) != 'numpy.ndarray':
         comids = np.array(comids)
 
@@ -377,8 +392,7 @@ def subset_channel_file(in_nc_filename, out_nc_filename, comids,
             vars_to_include = in_nc.variables.keys()
             attrs_to_exclude = []
         nc_comids = in_nc.variables['station_id'][:]
-        orig_indices = nc_comids.argsort()
-        index = orig_indices[np.searchsorted(nc_comids[orig_indices], comids)]
+        index = _get_comid_indices(comids, nc_comids)
         with Dataset(out_nc_filename, 'w', format=in_nc.data_model) as out_nc:
             out_nc.setncatts({k: in_nc.getncattr(k) for k in in_nc.ncattrs()})
 
