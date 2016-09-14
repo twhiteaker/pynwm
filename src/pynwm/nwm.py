@@ -480,8 +480,8 @@ def build_streamflow_cube(nc_files, comids, seconds_since_date,
             tmpfile = os.path.join(tmpdir, os.path.basename(nc_file)[:-3])
             with gzip.open(nc_file, 'rb') as z, open(tmpfile, 'wb') as uz:
                 uz.write(z.read())
-            f = tmpfile
-        with Dataset(f, 'r') as nc:
+            nc_file = tmpfile
+        with Dataset(nc_file, 'r') as nc:
             date = date_parser.parse(
                 nc.model_output_valid_time.replace('_', ' '))
             date = date.replace(tzinfo=pytz.utc)
