@@ -477,7 +477,7 @@ def build_streamflow_cube(nc_files, comids, seconds_since_date,
 
     for i, nc_file in enumerate(nc_files):
         if nc_file[-3:] == '.gz':
-            tmpfile = os.path.join(tmpdir, nc_file[:-3])
+            tmpfile = os.path.join(tmpdir, os.path.basename(nc_file)[:-3])
             with gzip.open(nc_file, 'rb') as z, open(tmpfile, 'wb') as uz:
                 uz.write(z.read())
             f = tmpfile
