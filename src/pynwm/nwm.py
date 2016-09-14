@@ -33,9 +33,11 @@ API into the National Water Model archive.
 """
 
 from datetime import datetime, timedelta
+import gzip
 import json
 import os
 import re
+import tempfile
 import urllib
 from urllib2 import HTTPError
 
@@ -355,8 +357,8 @@ def read_q_for_comids(nc_filename, comids):
         indices = _get_comid_indices(comids, nc_comids)
         result['flows'] = nc_q[indices]
     return result
-    
-    
+
+
 def subset_channel_file(in_nc_filename, out_nc_filename, comids,
                         just_flow_and_time=False):
     """Extracts a subset of data from an input channel file to a new file.
@@ -380,7 +382,7 @@ def subset_channel_file(in_nc_filename, out_nc_filename, comids,
 
     if len(comids) and type(comids[0]) is str:
         comids = [int(comid) for comid in comids]
-        
+
     if type(comids) != 'numpy.ndarray':
         comids = np.array(comids)
 
@@ -414,3 +416,134 @@ def subset_channel_file(in_nc_filename, out_nc_filename, comids,
                         out_var[:] = var[:]
                     else:
                         out_var[:] = var[index]
+
+
+def build_streamflow_cube(nc_files, comids, seconds_since_date,
+                          consistent_comid_order=True):
+    """Reads streamflow from several files into a single array.
+
+    Reads streamflow from several files into a single array. Each file from the
+    National Water Model represents a single time step. This function can be
+    used to read the streamflow values for all time steps in a given simulation
+    into a single multidimensional numpy array. Only streamflow for the rivers
+    represented by a set of National Hydrography Dataset COMID identifiers are
+    included in the result.
+
+    Args:
+        nc_files: List of netCDF filenames. Files can have .nc or .gz
+            extension. Zipped files are unzipped to a temporary folder and
+            deleted after use.
+        comids: List or numpy array of integers representing COMIDs for the
+            rivers whose streamflow value is to be returned.
+        seconds_since_date: Following netCDF conventions, output datetimes
+            for each time step are stored as integers representing the number
+            of seconds since the seconds_since_date, which should be a datetime
+            object or string with a time zone specified.
+        consistent_comid_order: (Optional) True if the order of COMIDs in all
+            files is the same; False otherwise. If True, this speeds up
+            processing a bit.
+
+    Returns:
+        A tuple consisting of a streamflow array and a time array. The
+        streamflow array is sized by (number of time steps, number of rivers)
+        and the time array is sized by (number of time steps). The time array
+        uses an int data type to be compatible with netCDF. The time values are
+        computed by subtracting the seconds_since_date from the valid output
+        time associated with each model file.
+
+    Example:
+        >>> from dateutil import parser
+        >>> file_pattern = 'nwm.t00z.short_range.channel_rt.f00{0}.conus.nc.gz'
+        >>> files = [file_pattern.format(i + 1) for i in range(15)]
+        >>> comids = [5671187, 5670795]
+        >>> seconds_since_date = parser.parse('2015-01-01 00:00:00Z')
+        >>> q, t = nwm.build_streamflow_cube(files, comids, seconds_since_date)
+    """
+
+    if not len(comids) or not len(nc_files):
+        return
+    elif isinstance(seconds_since_date, basestring):
+        seconds_since_date = date_parser.parse(seconds_since_date)
+    if len(comids) and type(comids[0]) is str:
+        comids = [int(comid) for comid in comids]
+    if type(comids) != 'numpy.ndarray':
+        comids = np.array(comids)
+
+    tmpdir = tempfile.gettempdir()
+    tmpfile = None
+    indices = None
+    out_q = np.zeros((len(nc_files), len(comids)))
+    out_t = np.zeros((len(nc_files), ), np.int)
+
+    for i, nc_file in enumerate(nc_files):
+        if nc_file[-3:] == '.gz':
+            tmpfile = os.path.join(tmpdir, nc_file[:-3])
+            with gzip.open(nc_file, 'rb') as z, open(tmpfile, 'wb') as uz:
+                uz.write(z.read())
+            f = tmpfile
+        with Dataset(f, 'r') as nc:
+            date = date_parser.parse(
+                nc.model_output_valid_time.replace('_', ' '))
+            date = date.replace(tzinfo=pytz.utc)
+            out_t[i] = (date - seconds_since_date).total_seconds()
+            if indices is None or not consistent_comid_order:
+                nc_comids = nc.variables['station_id'][:]
+                indices = _get_comid_indices(comids, nc_comids)
+            out_q[i] = nc.variables['streamflow'][indices]
+        if tmpfile and os.path.isfile(tmpfile):
+            os.remove(tmpfile)
+    return out_q, out_t
+
+
+def combine_files(nc_files, comids, output_file, consistent_comid_order=True):
+    """Combines streamflow from several files into a single netCDF file.
+
+    Combines streamflow from several files into a single netCDF file.  Each
+    file from the National Water Model represents a single time step. This
+    function can be used to read the streamflow values for all time steps in a
+    given simulation into a netCDF file. Only streamflow for the rivers
+    represented by a set of National Hydrography Dataset COMID identifiers are
+    included in the result.
+
+    If you want to combine files in their entirety, use NCO and ncrcat instead.
+
+    Args:
+        nc_files: List of netCDF filenames. Files can have .nc or .gz
+            extension. Zipped files are unzipped to a temporary folder and
+            deleted after use.
+        comids: List or numpy array of integers representing COMIDs for the
+            rivers whose streamflow value is to be returned.
+        output_file: The output netCDF file.
+        consistent_comid_order: (Optional) True if the order of COMIDs in all
+            files is the same; False otherwise. If True, this speeds up
+            processing a bit.
+
+    Example:
+        >>> from dateutil import parser
+        >>> file_pattern = 'nwm.t00z.short_range.channel_rt.f00{0}.conus.nc.gz'
+        >>> files = [file_pattern.format(i + 1) for i in range(15)]
+        >>> comids = [5671187, 5670795]
+        >>> nwm.combine_files(files, comids, 'combined.nc')
+    """
+
+    seconds_since_date = date_parser.parse('2015-01-01 00:00:00Z')
+    q, t = build_streamflow_cube(nc_files, comids, seconds_since_date,
+                                 consistent_comid_order)
+    with Dataset(output_file, 'w') as nc:
+        nc.createDimension('time', len(nc_files))
+        nc.createDimension('station', len(comids))
+
+        time_var = nc.createVariable('time', 'i', ('time',))
+        time_var.long_name = 'time'
+        time_var.standard_name = 'time'
+        time_var.units = 'seconds since 2016-05-01 00:00:00 0:00'
+        time_var[:] = t
+
+        comid_var = nc.createVariable('station_id', 'i', ('station',))
+        comid_var[:] = comids
+        comid_var.long_name = 'Station id'
+
+        q_var = nc.createVariable('streamflow', 'f4', ('time', 'station'))
+        q_var.long_name = 'River Flow'
+        q_var.units = 'meter^3 / sec'
+        q_var[:] = q
