@@ -16,7 +16,7 @@ import gzip
 import urllib
 
 _ftp_url = 'ftpprd.ncep.noaa.gov'
-_root_folder = '/pub/data/nccf/com/nwm/para'
+_root_folder = '/pub/data/nccf/com/nwm/prod/'
 
 
 def get_latest_analysis_filename():
