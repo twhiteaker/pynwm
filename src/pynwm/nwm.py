@@ -418,8 +418,8 @@ def subset_channel_file(in_nc_filename, out_nc_filename, comids,
                         out_var[:] = var[index]
 
 
-def build_streamflow_cube(nc_files, comids, seconds_since_date,
-                          consistent_comid_order=True):
+def build_streamflow_cube(nc_files, comids=None, consistent_comid_order=True,
+                          compute_max=True):
     """Reads streamflow from several files into a single array.
 
     Reads streamflow from several files into a single array. Each file from the
@@ -433,48 +433,59 @@ def build_streamflow_cube(nc_files, comids, seconds_since_date,
         nc_files: List of netCDF filenames. Files can have .nc or .gz
             extension. Zipped files are unzipped to a temporary folder and
             deleted after use.
-        comids: List or numpy array of integers representing COMIDs for the
-            rivers whose streamflow value is to be returned.
-        seconds_since_date: Following netCDF conventions, output datetimes
-            for each time step are stored as integers representing the number
-            of seconds since the seconds_since_date, which should be a datetime
-            object or string with a time zone specified.
+        comids: (Optional) List or numpy array of integers representing COMIDs
+            for the rivers whose streamflow value is to be returned. If None,
+            all rivers are used in the same order as the first file provided.
         consistent_comid_order: (Optional) True if the order of COMIDs in all
             files is the same; False otherwise. If True, this speeds up
             processing a bit.
+        compute_max: (Optional) True if maximum streamflow for each river
+            should be returned as an additional array; False otherwise.
 
     Returns:
-        A tuple consisting of a streamflow array and a time array. The
-        streamflow array is sized by (number of time steps, number of rivers)
-        and the time array is sized by (number of time steps). The time array
-        uses an int data type to be compatible with netCDF. The time values are
-        computed by subtracting the seconds_since_date from the valid output
-        time associated with each model file.
+        Tuple consisting of:
+            streamflow array (float)
+            time array (int)
+            datetime object for the valid output time of the first file
+            array of maximum streamflow for each river (float), or None
+        The streamflow array is sized by (number of time steps, number of
+        rivers) and the time array is sized by (number of time steps). The time
+        array uses an int data type to be compatible with netCDF. The time
+        values are the total number of seconds between the valid output time
+        for a given file and the valid output time of the first file. The max
+        streamflow array is sized by (number of rivers).
 
     Example:
-        >>> from dateutil import parser
         >>> file_pattern = 'nwm.t00z.short_range.channel_rt.f00{0}.conus.nc.gz'
         >>> files = [file_pattern.format(i + 1) for i in range(15)]
         >>> comids = [5671187, 5670795]
-        >>> seconds_since_date = parser.parse('2015-01-01 00:00:00Z')
-        >>> q, t = nwm.build_streamflow_cube(files, comids, seconds_since_date)
+        >>> q, t, since_date, max_q = nwm.build_streamflow_cube(files, comids)
     """
 
-    if not len(comids) or not len(nc_files):
+    if not len(nc_files):
         return
-    elif isinstance(seconds_since_date, basestring):
-        seconds_since_date = date_parser.parse(seconds_since_date)
-    if len(comids) and type(comids[0]) is str:
-        comids = [int(comid) for comid in comids]
-    if type(comids) != 'numpy.ndarray':
-        comids = np.array(comids)
+    if comids:
+        if type(comids[0]) is str:
+            comids = [int(comid) for comid in comids]
+        if type(comids) != 'numpy.ndarray':
+            comids = np.array(comids)
+        num_rivers = len(comids)
+    else:
+        comids = None
+        with Dataset(nc_files[0], 'r') as nc:
+            num_rivers = len(nc.variables['streamflow'])
+            if 'station_id' in nc.variables:
+                comids = nc.variables['station_id'][:]
 
     tmpdir = tempfile.gettempdir()
     tmpfile = None
     indices = None
-    out_q = np.zeros((len(nc_files), len(comids)))
+    seconds_since_date = None
+    out_q = np.zeros((len(nc_files), num_rivers))
     out_t = np.zeros((len(nc_files), ), np.int)
 
+    no_station_msg = ('COMIDs provided, but index to COMIDs cannot be built'
+                      'because {0} has no station_id variable')
     for i, nc_file in enumerate(nc_files):
         if nc_file[-3:] == '.gz':
             tmpfile = os.path.join(tmpdir, os.path.basename(nc_file)[:-3])
@@ -485,65 +496,97 @@ def build_streamflow_cube(nc_files, comids, seconds_since_date,
             date = date_parser.parse(
                 nc.model_output_valid_time.replace('_', ' '))
             date = date.replace(tzinfo=pytz.utc)
+            if not seconds_since_date:
+                seconds_since_date = date
             out_t[i] = (date - seconds_since_date).total_seconds()
-            if indices is None or not consistent_comid_order:
-                nc_comids = nc.variables['station_id'][:]
-                indices = _get_comid_indices(comids, nc_comids)
-            out_q[i] = nc.variables['streamflow'][indices]
+            if comids is None:
+                out_q[i] = nc.variables['streamflow'][:]
+            else:
+                if indices is None or not consistent_comid_order:
+                    if 'station_id' not in nc.variables:
+                        raise Exception(no_station_msg.format(nc_file))
+                    nc_comids = nc.variables['station_id'][:]
+                    indices = _get_comid_indices(comids, nc_comids)
+                out_q[i] = nc.variables['streamflow'][indices]
+
         if tmpfile and os.path.isfile(tmpfile):
             os.remove(tmpfile)
-    return out_q, out_t
+
+    if compute_max:
+        max_q = np.amax(out_q, axis=0)
+    else:
+        max_q = None
+
+    return out_q, out_t, seconds_since_date, max_q
 
 
-def combine_files(nc_files, comids, output_file, consistent_comid_order=True):
+def combine_files(nc_files, output_file, comids=None,
+                  consistent_comid_order=True, compute_max=True):
     """Combines streamflow from several files into a single netCDF file.
 
-    Combines streamflow from several files into a single netCDF file.  Each
-    file from the National Water Model represents a single time step. This
-    function can be used to read the streamflow values for all time steps in a
-    given simulation into a netCDF file. Only streamflow for the rivers
-    represented by a set of National Hydrography Dataset COMID identifiers are
-    included in the result.
-
-    If you want to combine files in their entirety, use NCO and ncrcat instead.
+    Each file from the National Water Model represents a single time step. This
+    function can be used to combine the streamflow arrays for all time steps in
+    a given simulation into a single netCDF file. Provide an array of COMIDs to
+    subset the data. Note that if you want to combine files in their entirety,
+    you may want to try the external utilities NCO and ncrcat instead.
 
     Args:
         nc_files: List of netCDF filenames. Files can have .nc or .gz
             extension. Zipped files are unzipped to a temporary folder and
             deleted after use.
-        comids: List or numpy array of integers representing COMIDs for the
-            rivers whose streamflow value is to be returned.
         output_file: The output netCDF file.
+        comids: (Optional) List or numpy array of integers representing COMIDs
+            for the rivers whose streamflow value is to be returned. If None,
+            all rivers are used.
         consistent_comid_order: (Optional) True if the order of COMIDs in all
             files is the same; False otherwise. If True, this speeds up
             processing a bit.
+        compute_max: (Optional) True if maximum streamflow for each river
+            should be included as an additional array; False otherwise.
 
     Example:
-        >>> from dateutil import parser
         >>> file_pattern = 'nwm.t00z.short_range.channel_rt.f00{0}.conus.nc.gz'
         >>> files = [file_pattern.format(i + 1) for i in range(15)]
         >>> comids = [5671187, 5670795]
-        >>> nwm.combine_files(files, comids, 'combined.nc')
+        >>> nwm.combine_files(files, 'combined.nc', comids)
     """
 
-    seconds_since_date = date_parser.parse('2015-01-01 00:00:00Z')
-    q, t = build_streamflow_cube(nc_files, comids, seconds_since_date,
-                                 consistent_comid_order)
+    nc_files = [f for f in nc_files if os.path.isfile(f)]
+    if not nc_files:
+        raise Exception('No files to combine')
+
+    q, t, seconds_since_date, max_q = build_streamflow_cube(
+        nc_files, comids, consistent_comid_order)
+    time_string = seconds_since_date.strftime('%Y-%m-%d %H:%M %Z')
+    time_units = 'seconds since {0}'.format(time_string)
+    num_rivers = len(q[0])
+    if comids is None:
+        with Dataset(nc_files[0], 'r') as nc:
+            if 'station_id' in nc.variables:
+                comids = nc.variables['station_id'][:]
+
     with Dataset(output_file, 'w') as nc:
         nc.createDimension('time', len(nc_files))
-        nc.createDimension('station', len(comids))
+        nc.createDimension('station', num_rivers)
 
         time_var = nc.createVariable('time', 'i', ('time',))
         time_var.long_name = 'time'
         time_var.standard_name = 'time'
-        time_var.units = 'seconds since 2016-05-01 00:00:00 0:00'
+        time_var.units = time_units
         time_var[:] = t
 
-        comid_var = nc.createVariable('station_id', 'i', ('station',))
-        comid_var[:] = comids
-        comid_var.long_name = 'Station id'
+        if comids is not None:
+            comid_var = nc.createVariable('station_id', 'i', ('station',))
+            comid_var[:] = comids
+            comid_var.long_name = 'Station id'
 
         q_var = nc.createVariable('streamflow', 'f4', ('time', 'station'))
         q_var.long_name = 'River Flow'
         q_var.units = 'meter^3 / sec'
         q_var[:] = q
+
+        if compute_max:
+            max_var = nc.createVariable('max_streamflow', 'f4', ('station',))
+            max_var.long_name = 'Maximum River Flow'
+            max_var.units = 'meter^3 / sec'
+            max_var[:] = max_q

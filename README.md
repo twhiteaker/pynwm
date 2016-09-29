@@ -88,6 +88,15 @@ comids = [5671187, 5670795]
 nwm.subset_channel_file(original_model_file, subsetted_model_file, comids)
 ```
 
+If you have several files for a given forecast and want to combine them, supply a list of files.
+
+```python
+file_pattern = 'nwm.t00z.short_range.channel_rt.f00{0}.conus.nc.gz'
+files = [file_pattern.format(i + 1) for i in range(15)]  # 15 files in short range forecast
+comids = [5671187, 5670795]
+nwm.combine_files(files, 'combined.nc', comids)
+```
+
 # What About the Rest of the Data?
 
 In addition to streamflow forecasts, the National Water Model also produces files describing inputs into the streamflow calculation such as soil moisture and precipitation. I only targeted streamflow in pynwm since that fits my own needs. The scripts could be modified to include variable names (e.g., `precipitation`), and the  HydroShare API already supports this. If you have a need for something more than streamflow, I welcome you to fork and contribute!
