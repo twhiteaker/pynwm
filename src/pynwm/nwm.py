@@ -360,7 +360,7 @@ def read_q_for_comids(nc_filename, comids):
 
 
 def subset_channel_file(in_nc_filename, out_nc_filename, comids,
-                        just_flow_and_time=False):
+                        just_streamflow_var=False, include_id_var=True):
     """Extracts a subset of data from an input channel file to a new file.
 
     A National Water Model channel file contains data related to river
@@ -375,9 +375,13 @@ def subset_channel_file(in_nc_filename, out_nc_filename, comids,
         out_nc_filename: Filename for the resulting subsetted file.
         comids: List or numpy array of integers representing COMIDs for the
             rivers to be included in the subsetted file.
-        just_flow_and_time: (Optional) True if only streamflow and time
-            variables should be included in the output. False if all variables
-            should be included.
+        just_streamflow_var: (Optional) True if other hydrologic variables such
+            as velocity and channel inflow should be excluded from the output.
+            False if all variables should be included.
+        include_id_var: (Optional) True if station_id variable should be
+            included in the output to index the input OCMIDs. Excluding
+            station_id will reduce file size but is only recommended if an
+            external list of COMIDs used for subsetting is persisted.
     """
 
     if len(comids) and type(comids[0]) is str:
@@ -387,12 +391,16 @@ def subset_channel_file(in_nc_filename, out_nc_filename, comids,
         comids = np.array(comids)
 
     with Dataset(in_nc_filename, 'r') as in_nc:
-        if just_flow_and_time:
+        if just_streamflow_var:
             vars_to_include = ['streamflow', 'time']
             attrs_to_exclude = ['coordinates']
         else:
             vars_to_include = in_nc.variables.keys()
             attrs_to_exclude = []
+        if include_id_var and 'station_id' not in vars_to_include:
+            vars_to_include.append('station_id')
+        elif not include_id_var and 'station_id' in vars_to_include:
+            vars_to_include.remove('station_id')
         nc_comids = in_nc.variables['station_id'][:]
         index = _get_comid_indices(comids, nc_comids)
         with Dataset(out_nc_filename, 'w', format=in_nc.data_model) as out_nc:
