@@ -472,7 +472,7 @@ def build_streamflow_cube(nc_files, comids=None, consistent_comid_order=True,
 
     if not len(nc_files):
         return
-    if comids:
+    if comids is not None and len(comids) > 0:
         if type(comids[0]) is str:
             comids = [int(comid) for comid in comids]
         if type(comids) != 'numpy.ndarray':
