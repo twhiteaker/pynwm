@@ -1,6 +1,6 @@
 SINCE_DATE = '1970-01-01 00:00:00 UTC'
 
-V1_1_DATE = '20170504'
+V1_1_DATE = '20170508t12-00'
 
 SCHEMAv1_0 = {'id_dim': 'station',
               'id_var': 'station_id',
