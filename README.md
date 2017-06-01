@@ -44,7 +44,7 @@ comids = [5671187, 5670795]
 result = nwm_data.read_streamflow(netcdf_filename, comids)
 print('ID {0}: {1} cms at {2}'.format(comids[0], 
                                       result['flows'][0],
-									  result['datetime'][0]))
+                                      result['datetime'][0]))
 ```
 
 If you want to save a subset of the data for your rivers for later use, supply an output filename.
