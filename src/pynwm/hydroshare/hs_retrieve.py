@@ -11,13 +11,13 @@ from urllib2 import HTTPError
 from dateutil import parser as date_parser
 import pytz
 
-from hs_constants import HS_URI
+from hs_constants import HS_DATA_EXPLORER_URI, HS_API_URI
 from hs_latest import find_latest_simulation
 from pynwm.constants import PRODUCTSv1_1
 
 
 def get_file(filename, output_folder):
-    uri = HS_URI + 'api/GetFile?file={0}'.format(filename)
+    uri = HS_DATA_EXPLORER_URI + 'api/GetFile?file={0}'.format(filename)
     output_filename = os.path.join(output_folder, filename)
     urlretrieve(uri, output_filename)
 
@@ -120,8 +120,8 @@ def _get_streamflow(product, feature_id, s_date, s_time, e_date, lag):
         e_date = date_parser.parse(str(e_date)).strftime('%Y-%m-%d')
 
     uri_template = (
-        'https://apps.hydroshare.org/apps/nwm-forecasts/get-netcdf-data?'
-        'config={0}&geom=channel_rt&variable=streamflow&comid={1}&'
+        HS_API_URI + 'get-netcdf-data?config={0}&geom=channel_rt&'
+        'variable=streamflow&COMID={1}&'
         'startDate={2}&time={3}&endDate={4}&lag={5}')
     uri = uri_template.format(product, feature_id, s_date, s_time, e_date, lag)
     response = urlopen(uri)
@@ -135,7 +135,7 @@ def _assert_forecast_product(product):
     if product not in valid_products:
         m = 'Invalid product: {0}. Valid products include {1}.'
         m = m.format(str(product), ', '.join(valid_products))
-        raise ValueError(m)        
+        raise ValueError(m)
 
 
 def get_forecasted_streamflow(product, feature_id, sim_yyyymmdd, sim_hh):
@@ -165,7 +165,7 @@ def get_forecasted_streamflow(product, feature_id, sim_yyyymmdd, sim_hh):
                     print dates[i].strftime('%y-%m-%d %H'), '\t', v
     """
 
-    _assert_forecast_product(product)  
+    _assert_forecast_product(product)
     lag = _hours_to_lags([sim_hh])
     return _get_streamflow(product, feature_id, sim_yyyymmdd, sim_hh, '', lag)
 

@@ -10,7 +10,7 @@ from urllib import urlopen
 from dateutil import parser as date_parser
 
 from pynwm.filenames import group_simulations
-from hs_constants import HS_URI
+from hs_constants import HS_DATA_EXPLORER_URI
 
 
 def _date_to_start_date_arg(date):
@@ -48,7 +48,8 @@ def _list_files(product, date=None):
     member = _product_to_member_arg(product)
     date = _date_to_start_date_arg(date)
     template = 'api/GetFileList/?config={config}&geom=channel{date}{member}'
-    uri = HS_URI + template.format(config=config, date=date, member=member)
+    args = template.format(config=config, date=date, member=member)
+    uri = HS_DATA_EXPLORER_URI + args
     response = urlopen(uri).read()
     files = json.loads(response)
     if not isinstance(files, list):
@@ -82,35 +83,15 @@ def list_dates(product):
             dates.append(date)
         dates = list(set(dates))  # Get unique dates
     else:
-        template = (HS_URI + 'files_explorer/get-folder-contents/?'
-                    'selection_path=%2Fprojects%2Fwater%2Fnwm%2Fdata%2F{0}%3F'
-                    'folder&query_type=filesystem')
+        template = (HS_DATA_EXPLORER_URI + 'files_explorer/get-folder-contents'
+                    '/?selection_path=%2Fprojects%2Fwater%2Fnwm%2Fdata%2F{0}'
+                    '%3Ffolder&query_type=filesystem')
         if 'long_range' in product:
             product = 'long_range'
         uri = template.format(product)
         response = urlopen(uri).read()
         dates = re.findall(r'\>([0-9]+)\<', response)
     return sorted(dates)
-
-
-def _list_forecast_sims(product, yyyymmdd):
-    template = (HS_URI + 'files_explorer/get-folder-contents/?'
-                'selection_path=%2Fprojects%2Fwater%2Fnwm%2Fdata%2F{0}%3F'
-                'folder&query_type=filesystem')
-    folder = 'long_range' if 'long_range' in product else product
-    uri = template.format(folder + '%2F' + yyyymmdd)
-    response = urlopen(uri).read()
-
-    pattern_template = (r'\>(nwm.t[0-9]+z.{product}.channel_rt{suffix}.'
-                        'f[0-9]+.conus.nc_georeferenced.nc)\<')
-    if product == 'long_range':
-        suffix = '_[1-4]'
-    else:
-        suffix = '_' + product[-1] if 'long_range' in product else ''
-    pattern = pattern_template.format(product=folder, suffix=suffix)
-    files = re.findall(pattern, response)
-    sims = group_simulations(files, yyyymmdd)
-    return sims
 
 
 def _group_by_date(filenames):
@@ -125,7 +106,7 @@ def _group_by_date(filenames):
 
 def _add_links(sims):
     for key, sim in sims.iteritems():
-        sim['links'] = [HS_URI + 'api/GetFile?file={0}'.format(f)
+        sim['links'] = [HS_DATA_EXPLORER_URI + 'api/GetFile?file={0}'.format(f)
                         for f in sim['files']]
 
 
