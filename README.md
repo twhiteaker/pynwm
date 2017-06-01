@@ -81,6 +81,8 @@ for s in series:
         print('{0} \t {1} cfs'.format(s['dates'][i], streamflow))
 ```
 
+For more HydroShare examples, see https://github.com/twhiteaker/pynwm/tree/master/src/pynwm/hydroshare.
+
 # What About the Rest of the Data?
 
 In addition to streamflow forecasts, the National Water Model also produces files describing inputs into the streamflow calculation such as soil moisture and precipitation. I only targeted streamflow in pynwm since that fits my own needs. If you have a need for something more than streamflow, I welcome you to fork and contribute!
