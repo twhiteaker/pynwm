@@ -23,6 +23,8 @@ def get_id_indices(find_ids, all_ids):
         find_ids = [int(x) for x in find_ids]
     if type(find_ids) != 'numpy.ndarray':
         find_ids = np.array(find_ids)
+    if type(all_ids) != 'numpy.ndarray':
+        all_ids = np.array(all_ids)
     sorted_index = all_ids.argsort()
     sorted_nc_comids = all_ids[sorted_index]
     found_index_sorted = np.searchsorted(sorted_nc_comids, find_ids)
@@ -65,8 +67,7 @@ def read_streamflow(nc_filename, river_ids):
 
     with Dataset(nc_filename, 'r') as nc:
         schema = get_schema(nc)
-        date = date_parser.parse(nc.model_output_valid_time.replace('_', ' '))
-        date = date.replace(tzinfo=pytz.utc)
+        date = time_from_dataset(nc)
         result['datetime'] = date
         nc_ids = nc.variables[schema['id_var']][:]
         nc_q = nc.variables['streamflow']

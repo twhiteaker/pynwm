@@ -157,7 +157,7 @@ def get_forecasted_streamflow(product, feature_id, sim_yyyymmdd, sim_hh):
          'values': [257.2516, 1295.7293]}
 
     Example:
-        >>> series = hs_retrieve.get_streamflow(
+        >>> series = hs_retrieve.get_forecasted_streamflow(
                 'short_range', 5671187, '20170420', '06')
         >>> for s in series:
                 dates = s['dates']
