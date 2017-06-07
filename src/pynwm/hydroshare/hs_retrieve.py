@@ -203,8 +203,7 @@ def get_latest_forecasted_streamflow(product, feature_id):
     _assert_forecast_product(product)
     lag = _hours_to_lags(['00', '06', '12', '18'])
     sims = find_latest_simulation(product)
-    for k, v in sims.iteritems():
-        sim_date = re.findall('\d{8}', k)[0]
-        sim_hh = re.findall('t\d\d-', k)[0][1:3]
-        break
+    key = sims.itervalues().next()
+    sim_date = re.findall('\d{8}', key)[0]
+    sim_hh = re.findall('t\d\d-', key)[0][1:3]
     return _get_streamflow(product, feature_id, sim_date, sim_hh, '', lag)
