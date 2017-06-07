@@ -69,7 +69,7 @@ def get_files_exist(nc_files):
     not_files = [f for f in nc_files if not os.path.isfile(f)]
     if not_files:
         file_list = '\n'.join(not_files)
-        m = 'Warning: These inputs files do not exist.\n{0}'.format(file_list)
+        m = 'Warning: These input files do not exist.\n{0}'.format(file_list)
         print(m)
     return files
 
@@ -99,7 +99,7 @@ def combine_files(nc_files, output_file, river_ids=None,
         >>> file_pattern = 'nwm.t00z.short_range.channel_rt.f00{0}.conus.nc'
         >>> files = [file_pattern.format(i + 1) for i in range(18)]
         >>> comids = [5671187, 5670795]
-        >>> nwm.combine_files(files, 'combined.nc', comids)
+        >>> nwm_subset.combine_files(files, 'combined.nc', comids)
     """
 
     nc_files = get_files_exist(nc_files)
@@ -130,7 +130,7 @@ def combine_files(nc_files, output_file, river_ids=None,
         for name_value in out_schema['time_attrs']:
             time_var.setncattr(name_value[0], name_value[1])
         time_var.units = time_units
-        time_var[:] = date2num(t, time_units)
+        time_var[:] = [round(d) for d in date2num(t, time_units)]
 
         id_var = nc.createVariable(id_var, 'i', (id_dim,))
         for name_value in out_schema['id_attrs']:
