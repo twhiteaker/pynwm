@@ -15,4 +15,4 @@ install:
   - source activate test-full
 
 script:
-  - py.test
+  - bash test.sh
