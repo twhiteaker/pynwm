@@ -5,6 +5,7 @@ import os
 
 from netCDF4 import Dataset, date2num
 import numpy as np
+import pytz
 
 import constants 
 import nwm_data
@@ -74,6 +75,34 @@ def get_files_exist(nc_files):
     return files
 
 
+def _dates_to_naive_utc(date_objects):
+    """Converts dates to UTC time zone and strips time zone info.
+
+    Date objects can be time zone aware. If the input date objects are time
+    zone aware, they are converted to UTC time and then the time zone info is
+    removed from the resulting object.
+
+    If inputs dates are not time zone aware, no conversion occurs. Therefore,
+    care should be taken NOT to provide time zone naive dates that are not
+    already in UTC time.
+
+    Args:
+        date_objects: List of date objects.
+
+    Returns:
+        List of time zone naive date objects converted to UTC time.
+    """
+
+    if len(date_objects) == 0:
+        return
+    naive_dates = []
+    for date in date_objects:
+        if date.tzinfo is not None and date.tzinfo.utcoffset(date) is not None:
+            date = date.astimezone(pytz.utc)
+        naive_dates.append(date.replace(tzinfo=None))
+    return naive_dates
+
+
 def combine_files(nc_files, output_file, river_ids=None,
                   consistent_id_order=True):
     """Combines streamflow from several files into a single netCDF file.
@@ -114,6 +143,7 @@ def combine_files(nc_files, output_file, river_ids=None,
 
     q, t = nwm_data.build_streamflow_cube(
         nc_files, river_ids, consistent_id_order)
+    t = _dates_to_naive_utc(t)
     num_rivers = len(q[0])
 
     out_schema = constants.SCHEMAv1_1
@@ -129,12 +159,6 @@ def combine_files(nc_files, output_file, river_ids=None,
         time_var = nc.createVariable('time', 'i', ('time',))
         for name_value in out_schema['time_attrs']:
             time_var.setncattr(name_value[0], name_value[1])
-
-
-        time_units = 'minutes since 1970-01-01 00:00:00'
-        t = [x.replace(tzinfo=None) for x in t]
-
-
         time_var.units = time_units
         time_var[:] = [round(d) for d in date2num(t, time_units)]
 
