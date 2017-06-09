@@ -94,7 +94,7 @@ def _dates_to_naive_utc(date_objects):
     """
 
     if len(date_objects) == 0:
-        return
+        return []
     naive_dates = []
     for date in date_objects:
         if date.tzinfo is not None and date.tzinfo.utcoffset(date) is not None:
