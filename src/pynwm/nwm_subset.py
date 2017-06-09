@@ -129,6 +129,12 @@ def combine_files(nc_files, output_file, river_ids=None,
         time_var = nc.createVariable('time', 'i', ('time',))
         for name_value in out_schema['time_attrs']:
             time_var.setncattr(name_value[0], name_value[1])
+
+
+        time_units = 'minutes since 1970-01-01 00:00:00'
+        t = [x.replace(tzinfo=None) for x in t]
+
+
         time_var.units = time_units
         time_var[:] = [round(d) for d in date2num(t, time_units)]
 
