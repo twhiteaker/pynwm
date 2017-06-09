@@ -130,7 +130,11 @@ def combine_files(nc_files, output_file, river_ids=None,
         for name_value in out_schema['time_attrs']:
             time_var.setncattr(name_value[0], name_value[1])
         time_var.units = time_units
-        time_var[:] = [round(d) for d in date2num(t, time_units)]
+        for time in t:
+            print(str(t))
+        t_as_number = date2num(t, time_units)
+        #time_var[:] = [round(d) for d in date2num(t, time_units)]
+        time_var[:] = [round(d) for d in t_as_number]
 
         id_var = nc.createVariable(id_var, 'i', (id_dim,))
         for name_value in out_schema['id_attrs']:
