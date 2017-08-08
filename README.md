@@ -29,6 +29,7 @@ pynwm requires Python 2.7 and the following packages:
 * netcdf4-python
 * python-dateutil
 * pytz
+* beautifulsoup4
 
 To use pynwm, just drop the `src/pynwm` folder next to your script and import the modules you need. See the `Examples` folder for example usage.
 
