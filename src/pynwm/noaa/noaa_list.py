@@ -2,27 +2,25 @@
 """Lists available National Water Model files from NOAA."""
 
 import collections
-from ftplib import FTP, error_perm
 import re
+import urllib2
+
+from bs4 import BeautifulSoup
 
 from pynwm.constants import PRODUCTSv1_1
 from pynwm.filenames import group_simulations
 
-_FTP_URI = 'ftpprd.ncep.noaa.gov'
-_FTP_ROOT = '/pub/data/nccf/com/nwm/prod/'
+_URI_ROOT = 'http://nomads.ncep.noaa.gov/pub/data/nccf/com/nwm/prod/'
 
 
-def _connect():
-    ftp = FTP(_FTP_URI)
-    ftp.login()
-    ftp.cwd(_FTP_ROOT)
-    return ftp
+def _get_links(uri):
+    f = urllib2.urlopen(uri)
+    soup = BeautifulSoup(f.read(), 'html.parser')
+    links = [a.get('href') for a in soup.find_all('a')
+             if a.text[:6] != 'Parent']
+    return links
 
     
-def _datefolder(yyyymmdd):
-    return 'nwm.' + str(yyyymmdd)
-
-
 def list_dates(product=None):
     """Lists available dates in yyyymmdd format.
 
@@ -36,44 +34,39 @@ def list_dates(product=None):
         Sorted list of dates in yyyymmdd format.
     """
 
-    ftp = _connect()
-    folders = ftp.nlst()
+    date_folders = _get_links(_URI_ROOT)
     if product:
         dates = []
-        for date_folder in folders:
-            folder = '{0}/{1}'.format(_FTP_ROOT, date_folder)
-            ftp.cwd(folder)
-            for available_product in ftp.nlst():
+        for date_folder in date_folders:
+            uri = '{0}/{1}'.format(_URI_ROOT, date_folder)
+            products = [p[:-1] for p in _get_links(uri)]  # remove slash
+            for available_product in products:
                 if product in available_product:
                     dates.append(re.findall('\d{8}', date_folder)[0])
         dates = list(set(dates))
     else:
-        dates = [re.findall('\d{8}', f)[0] for f in folders]
+        dates = [re.findall('\d{8}', d)[0] for d in date_folders]
     return sorted(dates)
 
 
-def _list_files(ftp, product, yyyymmdd):
+def _list_files(product, yyyymmdd):
     files = []
     links = []
-    datefolder = _datefolder(yyyymmdd)
-    folder = '{0}{1}/{2}'.format(_FTP_ROOT, datefolder, product)
+    datefolder = 'nwm.' + str(yyyymmdd)
+    uri = '{0}{1}/{2}/'.format(_URI_ROOT, datefolder, product)
     try:
-        ftp.cwd(folder)
-        links = ['ftp://{0}{1}/{2}'.format(_FTP_URI, folder, f)
-                 for f in ftp.nlst() if 'channel' in f]
+        matches = [m for m in _get_links(uri) if 'channel' in m]
+        links = ['{0}{1}'.format(uri, m) for m in matches]
         files = [re.findall('nwm\.t.+', f)[0] for f in links]
-    except error_perm as ex:
-        template = 'Warning: {0} -- {1} product may not be available for {2}'
-        print(template.format(ex, product, yyyymmdd))
+    except urllib2.HTTPError as ex:
+        if ex.code == 404:
+            msg = 'Warning: {0} -- {1} product may not be available for {2}'
+            print(msg.format(ex, product, yyyymmdd))
+        else:
+            raise
     except Exception as ex:
         raise
     return files, links
-
-
-def _add_links(sims, links):
-    for key, sim in sims.iteritems():
-        sim['links'] = [HS_URI + 'api/GetFile?file={0}'.format(f)
-                        for f in sim['files']]
 
 
 def list_sims(product=None, yyyymmdd=None):
@@ -105,10 +98,9 @@ def list_sims(product=None, yyyymmdd=None):
     else:
         products = [product] if product else [k for k in PRODUCTSv1_1]
     all_sims = {}
-    ftp = _connect()
     for date in dates:
         for product in products:
-            files, links = _list_files(ftp, product, yyyymmdd)
+            files, links = _list_files(product, yyyymmdd)
             sims = group_simulations(files, date, links)
             all_sims.update(sims)
     all_sims = collections.OrderedDict(sorted(all_sims.items()))
