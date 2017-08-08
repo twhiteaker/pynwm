@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/twhiteaker/pynwm.svg?branch=master)](https://travis-ci.org/twhiteaker/pynwm)
+
 # pynwm
 A Python client for consuming National Water Model forecasts
 
