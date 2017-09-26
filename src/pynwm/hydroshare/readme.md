@@ -8,7 +8,7 @@ HydroShare includes an API for accessing data and a couple of demonstration apps
 
 In addition to documented API methods, the HydroShare API includes a couple of hidden methods used by the demonstration apps. The apps include a time series viewer and a file explorer, available at (respectively):
 https://apps.hydroshare.org/apps/nwm-forecasts/
-https://apps.hydroshare.org/apps/nwm-data-explorer/
+https://appsdev.hydroshare.org/apps/nwm-data-explorer/
 
 HydroShare organizes its data a bit differently from how NOAA does it. For example, all four long range ensemble members are generally grouped together. Therefore, access to data may differ from patterns used to retrieve data directly from NOAA. For example, instead of specifying an individual `long_range_mem1` product, use `long_range` to get all members instead.
 
