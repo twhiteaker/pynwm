@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup
 from pynwm.constants import PRODUCTSv1_1
 from pynwm.filenames import group_simulations
 
-_URI_ROOT = 'http://nomads.ncep.noaa.gov/pub/data/nccf/com/nwm/prod/'
+_URI_ROOT = 'https://nomads.ncep.noaa.gov/pub/data/nccf/com/nwm/prod/'
 
 
 def _get_links(uri):
