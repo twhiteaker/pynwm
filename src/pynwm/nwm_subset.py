@@ -7,8 +7,8 @@ from netCDF4 import Dataset, date2num
 import numpy as np
 import pytz
 
-import constants 
-import nwm_data
+import pynwm.constants as constants
+import pynwm.nwm_data as nwm_data
 
 
 def subset_channel_file(in_nc_filename, out_nc_filename, river_ids,

@@ -6,7 +6,7 @@ from dateutil import parser as date_parser
 import pytz
 from netCDF4 import Dataset, num2date
 
-import constants 
+import pynwm.constants as constants
 
 
 def get_schema(nc_dataset):

@@ -4,7 +4,7 @@
 import collections
 import re
 
-import constants
+import pynwm.constants as constants
 
 
 def product_from_filename(filename):
