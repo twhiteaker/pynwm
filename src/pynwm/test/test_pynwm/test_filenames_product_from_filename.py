@@ -26,3 +26,21 @@ def test_long_range_from_filename():
     expected = 'long_range_mem1'
     product = filenames.product_from_filename(filename)
     assert expected == product
+
+
+def test_medium_range_from_filename():
+    '''Should find 'medium_range'.'''
+
+    filename = 'nwm.t00z.medium_range.channel_rt.f021.conus.nc'
+    expected = 'medium_range'
+    product = filenames.product_from_filename(filename)
+    assert expected == product
+
+
+def test_medium_range_member_from_filename():
+    '''Should find 'medium_range' and append '_mem' and the member number.'''
+
+    filename = 'nwm.t00z.medium_range.channel_rt_1.f003.conus.nc'
+    expected = 'medium_range_mem1'
+    product = filenames.product_from_filename(filename)
+    assert expected == product

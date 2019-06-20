@@ -49,18 +49,8 @@ def find_latest_simulation(product):
         dates = reversed(list_dates(product))
         for date in dates:
             date_sims = list_sims(product, date)
-            if product == 'long_range' and len(date_sims) == 16:
-                is_complete = True
-                for key, sim in date_sims.iteritems():
-                    if not sim['is_complete']:
-                        is_complete = False
-                        break
-                if is_complete:
-                    sims = date_sims
-                    break
-            elif product != 'long_range':
-                key, sim = _find_complete_sim(date_sims)
-                if key:
-                    sims[key] = sim
-                    break
+            key, sim = _find_complete_sim(date_sims)
+            if key:
+                sims[key] = sim
+                break
     return sims

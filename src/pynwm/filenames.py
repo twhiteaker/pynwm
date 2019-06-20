@@ -22,10 +22,12 @@ def product_from_filename(filename):
 
     pattern = r'(?<=z.)([\w]+)'  # Finds between 'z.' and next '.'
     product = re.search(pattern, filename).group(0)
-    if product == 'long_range':
+    if product in ['long_range', 'medium_range']:
         pattern = r'(?<=channel_rt_)([\d])'
-        member_number = re.search(pattern, filename).group(0)
-        product += '_mem' + member_number
+        result = re.search(pattern, filename)
+        if result:
+            member_number = result.group(0)
+            product += '_mem' + member_number
     return product
 
 
@@ -61,7 +63,9 @@ def is_sim_complete(sim):
     """
 
     product = sim['product']
-    if sim['date'] >= constants.V1_1_DATE:
+    if sim['date'] >= constants.V2_0_DATE:
+        expected_steps = constants.PRODUCTSv2_0[product]['steps']
+    elif sim['date'] >= constants.V1_1_DATE:
         expected_steps = constants.PRODUCTSv1_1[product]['steps']
     else:
         expected_steps = constants.PRODUCTSv1_0[product]['steps']

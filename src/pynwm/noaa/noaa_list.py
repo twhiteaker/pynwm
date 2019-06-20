@@ -7,7 +7,7 @@ import urllib2
 
 from bs4 import BeautifulSoup
 
-from pynwm.constants import PRODUCTSv1_1
+from pynwm.constants import PRODUCTSv2_0 as PRODUCTS
 from pynwm.filenames import group_simulations
 
 _URI_ROOT = 'https://nomads.ncep.noaa.gov/pub/data/nccf/com/nwm/prod/'
@@ -20,15 +20,14 @@ def _get_links(uri):
              if a.text[:6] != 'Parent']
     return links
 
-    
+
 def list_dates(product=None):
     """Lists available dates in yyyymmdd format.
 
-    If no product is supplied, a folder for any product counts. If
-    product is 'long_range', any long range member counts.
+    If no product is supplied, a folder for any product counts.
 
     Args:
-        product: (Optional) String indicating product.
+        product: (Optional) String indicating product, e.g., 'short_range'.
 
     Returns:
         Sorted list of dates in yyyymmdd format.
@@ -93,10 +92,7 @@ def list_sims(product=None, yyyymmdd=None):
     """
 
     dates = [yyyymmdd] if yyyymmdd else list_dates()
-    if product == 'long_range':
-        products = [k for k in PRODUCTSv1_1 if 'long_range' in k]
-    else:
-        products = [product] if product else [k for k in PRODUCTSv1_1]
+    products = [product] if product else [k for k in PRODUCTS]
     all_sims = {}
     for date in dates:
         for product in products:

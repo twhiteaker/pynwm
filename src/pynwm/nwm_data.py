@@ -81,7 +81,7 @@ def time_from_dataset(nc_dataset):
         var = nc_dataset.variables['time']
         units = var.units
         val = var[0]
-        date = num2date(val, units)       
+        date = num2date(val, units)
     elif 'model_output_valid_time' in nc_dataset.ncattrs():
         date = date_parser.parse(
             nc_dataset.model_output_valid_time.replace('_', ' '))
